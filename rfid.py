@@ -2,6 +2,7 @@
 from mfrc522 import SimpleMFRC522
 from time import sleep
 import paho.mqtt.client as mqtt
+import json
 
 def connect_mqtt():
     client = mqtt.Client(client_id)
@@ -24,8 +25,14 @@ try:
     while True:
         print("Hold a tag near the reader")
         id, text = reader.read()
-        print("ID: %s\nText: %s" % (id,text))
-        publish(client, topic, text)
+        text = 'wallet'
+        message = {
+            'sensorId': client_id,
+            'typeSensor': 'rfid',
+            'typeValue': 'fundsSource',
+            'value': text
+        }
+        publish(client, topic, json.dumps(message))
         sleep(5)
 finally:
     print('error occured!!')
