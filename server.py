@@ -1,9 +1,12 @@
 from os import environ as env
 from dotenv import load_dotenv, find_dotenv
+import threading
 
 from flask import Flask, request
 import json
 import requests
+
+import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
 
@@ -122,6 +125,54 @@ def authorize():
     print(r.status_code)
     return r.text
 
+def mqtt_run():
+    def on_message(client, userdata, message):
+        print('Received!')
+        topic = message.topic
+        payload = json.loads(message.payload)
+        print(payload['value'])
+        response = json.loads(pay_phone_request())
+        status = response['status']
+        if (status == 'success'):
+            message = {
+                'type_message':'payment_request',
+                'status': 'success',
+            }
+        else:
+            message = {
+                'type_message':'payment_request',
+                'status': 'refused',
+                'error': response['error'],
+                'error_description': response['error_description']
+            }    
+        result = client.publish('/backend/control', json.dumps(message))
+        response = json.loads(pay_phone_process())
+        status = response['status']
+        if (status == 'success'):
+            message = {
+                'type_message':'payment_process',
+                'status':'success',
+            }
+        else:
+            message = {
+                'type_message':'payment_process',
+                'status': 'refused',
+                'error': response['error']
+            } 
+        result = client.publish('/backend/control', json.dumps(message))
+
+    client = mqtt.Client('backend')
+    broker = '192.168.1.167'
+    port = 1883
+    client.connect(broker, port)
+    client.subscribe('/backend/')
+    client.on_message = on_message
+    return client
+
+
 if __name__ == "__main__":
     load_dotenv(find_dotenv())
+    client = mqtt_run()
+    thread = threading.Thread(target=client.loop_forever)
+    thread.start()
     app.run(host=env.get('HOST_IP'), ssl_context='adhoc')
