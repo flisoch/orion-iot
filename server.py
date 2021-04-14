@@ -98,14 +98,21 @@ def pay_phone_request():
     return r.text
 
 @app.route("/ym/pay-phone-process")
-def pay_phone_process():
+def pay_phone_process(money_source='wallet'):
     access_token = env.get('ACCESS_TOKEN')
     auth_header = "Bearer " + access_token
     headers = {"Authorization": auth_header}
-    data = {
-    'request_id': env.get('REQUEST_ID')
-    }
-
+    if ('wallet' in money_source):
+        data = {
+        'request_id': env.get('REQUEST_ID')
+        }
+    else:
+        data= {
+        'request_id': env.get('REQUEST_ID'),
+        'money_source':money_source,
+        'csc':'999'
+        }
+    print(data)
     r = requests.post('https://yoomoney.ru/api/process-payment', data=data, headers=headers)
     print(r.status_code)
     print(r.text)
@@ -130,7 +137,9 @@ def mqtt_run():
         print('Received!')
         topic = message.topic
         payload = json.loads(message.payload)
-        print(payload['value'])
+        fund_source = payload['value']
+        print(fund_source)
+        
         response = json.loads(pay_phone_request())
         status = response['status']
         if (status == 'success'):
@@ -146,7 +155,7 @@ def mqtt_run():
                 'error_description': response['error_description']
             }    
         result = client.publish('/backend/control', json.dumps(message))
-        response = json.loads(pay_phone_process())
+        response = json.loads(pay_phone_process(fund_source))
         status = response['status']
         if (status == 'success'):
             message = {

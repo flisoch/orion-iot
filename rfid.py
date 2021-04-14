@@ -29,7 +29,8 @@ def on_message(client, userdata, message):
     led.turn_on(color)
 
 reader = SimpleMFRC522()
-client_id = 'tag-730707006997'
+# client_id = 'tag-730707006997'
+client_id = None
 broker = '192.168.1.167'
 port = 1883
 topic_device = '/device/'
@@ -44,12 +45,13 @@ try:
         led.turn_off_all()
         print("Hold a tag near the reader")
         id, text = reader.read()
-        text = 'wallet'
+        print(id, text)
+        client_id = 'tag-' + str(id)
         message = {
             'sensor_id': client_id,
             'type_sensor': 'rfid',
             'type_value': 'fundsSource',
-            'value': text
+            'value': text.rstrip("\n")
         }
         publish(client, topic_device, json.dumps(message))
         sleep(5)
