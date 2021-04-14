@@ -1,4 +1,5 @@
-
+from os import environ as env
+from dotenv import load_dotenv, find_dotenv
 from mfrc522 import SimpleMFRC522
 from time import sleep
 import paho.mqtt.client as mqtt
@@ -18,6 +19,9 @@ def publish(client, topic, message):
     result = client.publish(topic, message)
     print(result)
 
+def on_connect(client, userdata, flags, rc):
+    print('Connected to MQTT broker!')
+
 def on_disconnect(client, userdata, rc):
     print('DISCONNECTED! rc:', str(rc))
 
@@ -31,22 +35,28 @@ def on_message(client, userdata, message):
 reader = SimpleMFRC522()
 # client_id = 'tag-730707006997'
 client_id = None
-broker = '192.168.1.167'
-port = 1883
+load_dotenv(find_dotenv())
+broker = env.get('HOST_IP')
+port = int(env.get('MQTT_PORT'))
 topic_device = '/device/'
 topic_device_control = '/device/control'
 try:
     client = connect_mqtt()
     client.subscribe(topic_device_control)
     client.on_message = on_message
+    client.on_connect = on_connect
     thread = threading.Thread(target=client.loop_forever)
     thread.start()
+    sleep(1)
     while True:
         led.turn_off_all()
         print("Hold a tag near the reader")
         id, text = reader.read()
         print(id, text)
         client_id = 'tag-' + str(id)
+        if(text == ''):
+            print("TAG NOT READ!! TRY AGAIN")
+            led.blink('blue', 3)
         message = {
             'sensor_id': client_id,
             'type_sensor': 'rfid',

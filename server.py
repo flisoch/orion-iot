@@ -133,6 +133,9 @@ def authorize():
     return r.text
 
 def mqtt_run():
+    def on_connect(client, userdata, flags, rc):
+        print('Connected to MQTT broker!')
+        
     def on_message(client, userdata, message):
         print('Received!')
         topic = message.topic
@@ -171,11 +174,13 @@ def mqtt_run():
         result = client.publish('/backend/control', json.dumps(message))
 
     client = mqtt.Client('backend')
-    broker = '192.168.1.167'
-    port = 1883
+    # load_dotenv(find_dotenv())
+    broker = env.get('HOST_IP')
+    port = int(env.get('MQTT_PORT'))
     client.connect(broker, port)
     client.subscribe('/backend/')
     client.on_message = on_message
+    client.on_connect = on_connect
     return client
 
 

@@ -31,10 +31,11 @@ def turn_off_all():
     GPIO.output(GREEN_PIN, GPIO.LOW)
     GPIO.output(BLUE_PIN, GPIO.LOW)
 
-def blink(num):
-    turn_on(num)
-    time.sleep(1)
-    turn_off(num)
+def blink(color, num):
+    for i in range(num):
+        turn_on(color)
+        time.sleep(1)
+        turn_off(color)
 
 def run():
     num = 0

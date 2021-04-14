@@ -1,4 +1,5 @@
-
+from os import environ as env
+from dotenv import load_dotenv, find_dotenv
 from time import sleep
 import threading
 import paho.mqtt.client as mqtt
@@ -45,11 +46,12 @@ def on_message(client, userdata, message):
         publish(client, '/device/control', json.dumps(message))
 
 def on_connect(client, userdata, flags, rc):
-    print('Connected!')
+    print('Connected to MQTT broker!')
 
 client_id = 'service'
-broker = '192.168.1.167'
-port = 1883
+load_dotenv(find_dotenv())
+broker = env.get('HOST_IP')
+port = int(env.get('MQTT_PORT'))
 topic_rfid = '/device/'
 topic_backend = '/backend/control'
 
